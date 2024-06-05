@@ -1,38 +1,37 @@
 package demo.Functions;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 public class BorrowRecord {
-    private String bookId;
-    private String borrowerName;
-    private String email;
-    private String phoneNumber;
+    private String BorrowID;
+    private String TenSach;
+    private String bookID;
+    private String IDNguoiMuon;
     private String borrowDate;
     private String returnDate;
-    private String status;
 
-    public BorrowRecord(String bookId, String borrowerName, String email, String phoneNumber, String borrowDate) {
-        this.bookId = bookId;
-        this.borrowerName = borrowerName;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
+    public BorrowRecord(String BorrowID, String TenSach, String BookID, String IDNguoiMuon ,String borrowDate, String returnDate) {
+        this.BorrowID = BorrowID;
+        this.TenSach = TenSach;
+        this.bookID = BookID;
+        this.IDNguoiMuon = IDNguoiMuon;
         this.borrowDate = borrowDate;
-        this.returnDate = ""; 
-        this.status = "Borrowed"; // Default status
+        this.returnDate = returnDate; 
     }
 
     public String getBookId() {
-        return bookId;
+        return bookID;
     }
 
-    public String getBorrowerName() {
-        return borrowerName;
+    public String getBorrowID() {
+        return BorrowID;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public String getPhoneNumber() {
-        return phoneNumber;
+    public String getBookName() {
+        return TenSach;
     }
 
     public String getBorrowDate() {
@@ -43,15 +42,25 @@ public class BorrowRecord {
         return returnDate;
     }
 
+    public String getBorrowerID() {
+        return IDNguoiMuon;
+    }
+
+    public String getBorrowerName() throws SQLException{
+        Connection connection = MySqlConnection.getConnection();
+        String query = "SELECT TenNguoiMuon FROM nguoimuon WHERE IDNguoiMuon = ?;";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, IDNguoiMuon);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getString("TenNguoiMuon");
+                }
+            }
+        }
+        return "Unknown Borrower";
+    }
+
     public void setReturnDate(String returnDate) {
         this.returnDate = returnDate;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 }

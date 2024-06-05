@@ -1,14 +1,14 @@
 package demo.Book;
 
 public class Book {
-    private int id;
+    private String id;
     private String title;
     private String author;
     private int year;
     private int quantity;
 
     // Constructor
-    public Book(int id, String title, String author, int year, int quantity) {
+    public Book(String id, String title, String author, int year, int quantity) {
         this.id = id;
         this.title = title;
         this.author = author;
@@ -17,11 +17,11 @@ public class Book {
     }
 
     // Getter và Setter cho từng thuộc tính
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 

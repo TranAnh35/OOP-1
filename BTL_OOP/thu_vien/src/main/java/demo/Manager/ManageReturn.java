@@ -5,16 +5,23 @@ import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
 
 import demo.Book.ReturnBook;
+import demo.Functions.MySqlConnection;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
 import javax.imageio.ImageIO;
 
 public class ManageReturn extends JFrame {
 
-    private DefaultTableModel tableModel;
+    private DefaultTableModel returnTableModel;
+    private JTable returnTable;
+    private JTextField searchField;
 
     public ManageReturn() {
         setTitle("Quản lý trả sách");
@@ -77,7 +84,7 @@ public class ManageReturn extends JFrame {
         JLabel searchLabel = new JLabel("Tìm kiếm:");
         searchPanel.add(searchLabel);
 
-        JTextField searchField = new JTextField(15);
+        searchField = new JTextField(15);
         searchPanel.add(searchField);
 
         ImageIcon searchIcon = resizeIcon("BTL_OOP/thu_vien/src/main/java/demo/resourse/image/loupe.png", 20, 20); // Điều chỉnh kích thước của icon
@@ -94,9 +101,9 @@ public class ManageReturn extends JFrame {
         // Khởi tạo bảng danh sách trả sách với dữ liệu rỗng
         String[] columnNames = {"ID sách", "Tên người mượn", "Ngày trả sách", "Khoản phạt"};
         Object[][] data = {};
-        tableModel = new DefaultTableModel(data, columnNames);
-        JTable table = new JTable(tableModel);
-        JScrollPane tableScrollPane = new JScrollPane(table);
+        returnTableModel = new DefaultTableModel(data, columnNames);
+        returnTable = new JTable(returnTableModel);
+        JScrollPane tableScrollPane = new JScrollPane(returnTable);
         tablePanel.add(tableScrollPane, BorderLayout.CENTER);
 
         rightPanel.add(buttonSearchPanel, BorderLayout.NORTH);
@@ -110,6 +117,7 @@ public class ManageReturn extends JFrame {
         pack();
         setLocationRelativeTo(null);
         setVisible(true);
+        updateTable();
     }
 
     // Phương thức để tạo nút chức năng
@@ -148,6 +156,25 @@ public class ManageReturn extends JFrame {
         } catch (IOException e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public void updateTable() {
+        returnTableModel.setRowCount(0);
+        try(Connection conn = MySqlConnection.getConnection()){
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM trasach;");
+            ResultSet rs = stmt.executeQuery();
+
+            while(rs.next()){
+                String bookID = rs.getString("BookID");
+                String tenNguoiMuon = rs.getString("TenNguoiMuon");
+                String ngayTra = rs.getString("NgayTra");
+                String khoanPhat = rs.getString("KhoanPhat");
+
+                returnTableModel.addRow(new Object[]{bookID, tenNguoiMuon, ngayTra, khoanPhat});
+            }
+        }catch(Exception e){
+            e.printStackTrace();
         }
     }
 

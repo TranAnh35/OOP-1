@@ -6,7 +6,7 @@ public class EBook extends Book {
     private float fileSize;
 
     // Constructor
-    public EBook(int id, String title, String author, int year, int quantity, String format, float fileSize) {
+    public EBook(String id, String title, String author, int year, int quantity, String format, float fileSize) {
         super(id, title, author, year, quantity);
         this.format = format;
         this.fileSize = fileSize;

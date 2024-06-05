@@ -13,7 +13,7 @@ public class BookTypeSelection extends JFrame {
 
         setTitle("Chọn loại sách");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setPreferredSize(new Dimension(400, 200)); // Increased size to fit larger buttons
+        setPreferredSize(new Dimension(400, 200));
 
         JPanel contentPane = new JPanel(new BorderLayout());
         setContentPane(contentPane);
@@ -34,15 +34,14 @@ public class BookTypeSelection extends JFrame {
         JButton physicalBookButton = new JButton("Sách in");
         physicalBookButton.setBackground(new Color(0, 139, 139));
         physicalBookButton.setForeground(Color.WHITE);
-        physicalBookButton.setPreferredSize(new Dimension(300, 50)); // Adjusted button size
+        physicalBookButton.setPreferredSize(new Dimension(300, 50));
 
 
         JButton eBookButton = new JButton("Sách điện tử");
         eBookButton.setBackground(new Color(0, 139, 139));
         eBookButton.setForeground(Color.WHITE);
-        eBookButton.setPreferredSize(new Dimension(300, 20)); // Adjusted button size
+        eBookButton.setPreferredSize(new Dimension(300, 20));
 
-        // Action listener for physical book button
         physicalBookButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 AddBook addBook = new AddBook(physicalBookTableModel);

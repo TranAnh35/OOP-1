@@ -105,7 +105,7 @@ public class AddEBook extends JFrame {
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
-                    int id = Integer.parseInt(idField.getText());
+                    String id = idField.getText();
                     String name = nameField.getText();
                     String author = authorField.getText();
                     int year = Integer.parseInt(yearField.getText());
@@ -146,13 +146,13 @@ public class AddEBook extends JFrame {
     }
 
     // Phương thức thêm sách điện tử vào cơ sở dữ liệu
-    private void addEBookToDatabase(int id, String name, String author, int year, String format, float size) {
-        String query = "INSERT INTO ThuVienEBook (ID, TenSach, TacGia, NamXuatBan, SoLuong, DinhDangFile, KichThuocFile) VALUES (?, ?, ?, ?, 1, ?, ?)";
+    private void addEBookToDatabase(String id, String name, String author, int year, String format, float size) {
+        String query = "INSERT INTO EBook (eBookID, TenSach, TacGia, NamXuatBan, SoLuong, DinhDangFile, KichThuocFile) VALUES (?, ?, ?, ?, 1, ?, ?)";
 
         try (Connection conn = MySqlConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
 
-            stmt.setInt(1, id);
+            stmt.setString(1, id);
             stmt.setString(2, name);
             stmt.setString(3, author);
             stmt.setInt(4, year);
@@ -206,9 +206,9 @@ public class AddEBook extends JFrame {
     }
 
     // Kiểm tra tính duy nhất của ID sách
-    private boolean isIDUnique(int id) {
+    private boolean isIDUnique(String id) {
         for (int i = 0; i < eBookTableModel.getRowCount(); i++) {
-            if (id == (int) eBookTableModel.getValueAt(i, 0)) {
+            if (id == eBookTableModel.getValueAt(i, 0)) {
                 return false;
             }
         }

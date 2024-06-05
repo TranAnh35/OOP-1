@@ -3,6 +3,7 @@ package demo.Manager;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -75,25 +76,25 @@ public class ManageBorrower extends JFrame {
         searchField = new JTextField(15);
         searchPanel.add(searchField);
 
-        ImageIcon searchIcon = resizeIcon("BTL_OOP/thu_vien/src/main/java/demo/resourse/image/loupe.png", 20, 20); // Resize the icon
+        ImageIcon searchIcon = resizeIcon("BTL_OOP/thu_vien/src/main/java/demo/resourse/image/loupe.png", 20, 20);
         JButton searchButton = new JButton(searchIcon);
         searchButton.setPreferredSize(new Dimension(30, 30));
         searchButton.setBackground(new Color(240, 255, 255));
         searchButton.setBorder(null);
-        searchButton.addActionListener(e -> searchBorrower());
+        searchButton.addActionListener(e -> searchBorrower(searchField.getText().toLowerCase()));
         searchPanel.add(searchButton);
 
-        borrowerInfoPanel.add(searchPanel, BorderLayout.NORTH);
-
+        
         // Borrower information table panel
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBackground(new Color(240, 255, 255));
-
+        
         borrowerTableModel = new DefaultTableModel(new Object[]{"ID", "Họ tên", "Email", "Số điện thoại"}, 0);
         borrowerTable = new JTable(borrowerTableModel);
         JScrollPane scrollPane = new JScrollPane(borrowerTable);
         tablePanel.add(scrollPane, BorderLayout.CENTER);
-
+        
+        borrowerInfoPanel.add(searchPanel, BorderLayout.NORTH);
         borrowerInfoPanel.add(tablePanel, BorderLayout.CENTER);
 
         rightPanel.add(borrowerInfoPanel, BorderLayout.CENTER);
@@ -151,16 +152,10 @@ public class ManageBorrower extends JFrame {
         }
     }
 
-    // Method to search borrowers
-    private void searchBorrower() {
-        String searchText = searchField.getText().toLowerCase();
-        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(borrowerTableModel);
+    private void searchBorrower(String searchText) {
+        TableRowSorter<TableModel> sorter = new TableRowSorter<>(borrowerTableModel);
         borrowerTable.setRowSorter(sorter);
-        if (searchText.trim().length() == 0) {
-            sorter.setRowFilter(null);
-        } else {
-            sorter.setRowFilter(RowFilter.regexFilter("(?i)" + searchText));
-        }
+        sorter.setRowFilter(RowFilter.regexFilter("(?i)" + searchText));
     }
 
     public static void main(String[] args) {

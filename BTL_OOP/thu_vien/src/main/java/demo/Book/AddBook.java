@@ -105,7 +105,7 @@ public class AddBook extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 try {
                     // Lấy thông tin từ các trường nhập liệu
-                    int id = Integer.parseInt(idField.getText());
+                    String id = idField.getText();
                     String title = titleField.getText();
                     String author = authorField.getText();
                     int year = Integer.parseInt(yearField.getText());
@@ -156,9 +156,9 @@ public class AddBook extends JFrame {
     // Phương thức để thêm sách vào cơ sở dữ liệu
     private void addBookToDatabase(Book book) {
         try (Connection connection = MySqlConnection.getConnection()) {
-            String query = "INSERT INTO ThuVienBook (ID, TieuDeSach, TacGia, NamXuatBan, SoLuong) VALUES (?, ?, ?, ?, ?)";
+            String query = "INSERT INTO Book (BookID, TieuDeSach, TacGia, NamXuatBan, SoLuong) VALUES (?, ?, ?, ?, ?)";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setInt(1, book.getId());
+                preparedStatement.setString(1, book.getId());
                 preparedStatement.setString(2, book.getTitle());
                 preparedStatement.setString(3, book.getAuthor());
                 preparedStatement.setInt(4, book.getYear());
@@ -173,11 +173,11 @@ public class AddBook extends JFrame {
     
 
     // Kiểm tra tính duy nhất của ID sách trong cơ sở dữ liệu
-    private boolean isIDUnique(int id) {
+    private boolean isIDUnique(String id) {
         try (Connection connection = MySqlConnection.getConnection()) {
-            String query = "SELECT COUNT(*) FROM ThuVienBook WHERE ID = ?";
+            String query = "SELECT COUNT(*) FROM Book WHERE BookID = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setInt(1, id);
+                preparedStatement.setString(1, id);
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
                         return resultSet.getInt(1) == 0;

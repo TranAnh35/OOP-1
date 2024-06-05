@@ -3,19 +3,26 @@ package demo.Manager;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
+
 import javax.imageio.ImageIO;
 
 import demo.Functions.SharedModel;
 import demo.Book.BorrowBook;
-import demo.Functions.SharedModel.BorrowRecord;
+import demo.Functions.BorrowRecord;
 
 public class ManageBorrow extends JFrame {
 
-    private static DefaultTableModel tableModel;
+    private static DefaultTableModel borrowTableModel;
+    private JTable borrowTable;
+    private JTextField searchField;
 
     public ManageBorrow() {
         setTitle("Quản lý mượn sách");
@@ -74,14 +81,15 @@ public class ManageBorrow extends JFrame {
         JLabel searchLabel = new JLabel("Tìm kiếm:");
         searchPanel.add(searchLabel);
 
-        JTextField searchField = new JTextField(15);
+        searchField = new JTextField(15);
         searchPanel.add(searchField);
 
-        ImageIcon searchIcon = resizeIcon("BTL_OOP/thu_vien/src/main/java/demo/resourse/image/loupe.png", 20, 20); // Adjust icon size
+        ImageIcon searchIcon = resizeIcon("BTL_OOP/thu_vien/src/main/java/demo/resourse/image/loupe.png", 20, 20);
         JButton searchButton = new JButton(searchIcon);
         searchButton.setPreferredSize(new Dimension(30, 30));
         searchButton.setBackground(new Color(240, 255, 255));
         searchButton.setBorder(null);
+        searchButton.addActionListener(e -> searchBorrow(searchField.getText().toLowerCase()));
         searchPanel.add(searchButton);
 
         // Panel for table of borrowed books
@@ -90,9 +98,9 @@ public class ManageBorrow extends JFrame {
 
         // Initialize table of borrowed books with empty data
         String[] columnNames = {"ID sách", "Tên sách", "Họ tên người mượn", "Ngày mượn", "Ngày hẹn trả"};
-        tableModel = new DefaultTableModel(columnNames, 0);
-        JTable table = new JTable(tableModel);
-        JScrollPane tableScrollPane = new JScrollPane(table);
+        borrowTableModel = new DefaultTableModel(columnNames, 0);
+        borrowTable = new JTable(borrowTableModel);
+        JScrollPane tableScrollPane = new JScrollPane(borrowTable);
         tablePanel.add(tableScrollPane, BorderLayout.CENTER);
 
         rightPanel.add(buttonSearchPanel, BorderLayout.NORTH);
@@ -146,16 +154,26 @@ public class ManageBorrow extends JFrame {
     }
 
     public static void updateTable() {
-        tableModel.setRowCount(0);
+        borrowTableModel.setRowCount(0);
         for (BorrowRecord record : SharedModel.getBorrowRecords()) {
-            tableModel.addRow(new Object[]{
-                record.getBookId(),
-                SharedModel.getBookTitle(record.getBookId()),
-                record.getBorrowerName(),
-                record.getBorrowDate(),
-                record.getReturnDate()
-            });
+            try {
+                borrowTableModel.addRow(new Object[]{
+                    record.getBookId(),
+                    SharedModel.getBookTitle(record.getBookId()),
+                    record.getBorrowerName(),
+                    record.getBorrowDate(),
+                    record.getReturnDate()
+                });
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
+    }
+
+    private void searchBorrow(String searchText){
+        TableRowSorter<TableModel> sorter = new TableRowSorter<>(borrowTableModel);
+        borrowTable.setRowSorter(sorter);
+        sorter.setRowFilter(RowFilter.regexFilter("(?i)" + searchText));
     }
 
     public static void main(String[] args) {

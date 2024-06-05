@@ -7,8 +7,6 @@ import demo.Functions.MySqlConnection;
 import java.sql.*;
 import java.util.Vector;
 
-// import Functions.MySqlConnection;
-
 public class BookData {
     private static BookData instance;
     private DefaultTableModel physicalBookTableModel;
@@ -50,13 +48,15 @@ public class BookData {
     }
 
     public void removePhysicalBook(int row) {
-        int id = (int) physicalBookTableModel.getValueAt(row, 0);
+        Object temp = physicalBookTableModel.getValueAt(row, 0);
+        String id = temp.toString();
         deletePhysicalBookFromDatabase(id);
         physicalBookTableModel.removeRow(row);
     }
 
     public void removeEBook(int row) {
-        int id = (int) eBookTableModel.getValueAt(row, 0);
+        Object temp = eBookTableModel.getValueAt(row, 0);
+        String id = temp.toString();
         deleteEBookFromDatabase(id);
         eBookTableModel.removeRow(row);
     }
@@ -71,11 +71,11 @@ public class BookData {
     }
 
     private void loadPhysicalBooks(Connection connection) throws SQLException {
-        String query = "SELECT * FROM ThuVienBook";
+        String query = "SELECT * FROM Book";
         try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
             while (rs.next()) {
                 Vector<Object> row = new Vector<>();
-                row.add(rs.getInt("ID"));
+                row.add(rs.getString("BookID"));
                 row.add(rs.getString("TieuDeSach"));
                 row.add(rs.getString("TacGia"));
                 row.add(rs.getInt("NamXuatBan"));
@@ -87,11 +87,11 @@ public class BookData {
     }
 
     private void loadEBooks(Connection connection) throws SQLException {
-        String query = "SELECT * FROM ThuVienEBook";
+        String query = "SELECT * FROM EBook";
         try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
             while (rs.next()) {
                 Vector<Object> row = new Vector<>();
-                row.add(rs.getInt("ID"));
+                row.add(rs.getString("eBookID"));
                 row.add(rs.getString("TenSach"));
                 row.add(rs.getString("TacGia"));
                 row.add(rs.getInt("NamXuatBan"));
@@ -103,11 +103,11 @@ public class BookData {
         }
     }
 
-    private void deletePhysicalBookFromDatabase(int id) {
+    private void deletePhysicalBookFromDatabase(String id) {
         try (Connection connection = MySqlConnection.getConnection()) {
-            String query = "DELETE FROM ThuVienBook WHERE ID = ?";
+            String query = "DELETE FROM Book WHERE BookID = ?";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
-                stmt.setInt(1, id);
+                stmt.setString(1, id);
                 stmt.executeUpdate();
             }
         } catch (SQLException e) {
@@ -115,11 +115,11 @@ public class BookData {
         }
     }
 
-    private void deleteEBookFromDatabase(int id) {
+    private void deleteEBookFromDatabase(String id) {
         try (Connection connection = MySqlConnection.getConnection()) {
-            String query = "DELETE FROM ThuVienEBook WHERE ID = ?";
+            String query = "DELETE FROM EBook WHERE eBookID = ?";
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
-                stmt.setInt(1, id);
+                stmt.setString(1, id);
                 stmt.executeUpdate();
             }
         } catch (SQLException e) {

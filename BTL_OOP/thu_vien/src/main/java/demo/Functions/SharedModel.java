@@ -1,8 +1,9 @@
 package demo.Functions;
 
+import demo.Book.Book;
+
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public class SharedModel {
@@ -11,11 +12,46 @@ public class SharedModel {
     private static List<Borrower> borrowers = new ArrayList<>();
 
     public static List<BorrowRecord> getBorrowRecords() {
-        return borrowRecords;
+        List<BorrowRecord> listBorrowRecords = new ArrayList<>();
+        String sql = "SELECT * FROM muonsach;";
+        try(Connection conn = MySqlConnection.getConnection()){
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery();
+
+            while(rs.next()){
+                String borrowID = rs.getString("borrowID");
+                String tenSach = rs.getString("TenSach");
+                String bookID = rs.getString("BookID");
+                String idNguoiMuon = rs.getString("IDNguoiMuon");
+                String ngayMuon = rs.getString("NgayMuon");
+
+                listBorrowRecords.add(new BorrowRecord(borrowID, tenSach, bookID, idNguoiMuon, borrowID, ngayMuon));
+            }
+        }catch(SQLException e){
+            e.printStackTrace();
+        }
+        return listBorrowRecords;
     }
 
     public static List<Borrower> getBorrowers() {
-        return borrowers;
+        List<Borrower> listBorrowers = new ArrayList<>();
+        String sql = "SELECT * FROM NguoiMuon";
+        try(Connection conn = MySqlConnection.getConnection()){
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery();
+
+            while(rs.next()){
+                String IDNguoiMuon = rs.getString("IDNguoiMuon");
+                String TenNguoiMuon = rs.getString("TenNguoiMuon");
+                String email = rs.getString("email");
+                String soDienThoai = rs.getString("soDienThoai");
+
+                listBorrowers.add(new Borrower(IDNguoiMuon, TenNguoiMuon, email, soDienThoai));
+            }
+        }catch(SQLException e){
+            e.printStackTrace();
+        }
+        return listBorrowers;
     }
 
     public static List<Book> getBooks() {
@@ -38,7 +74,7 @@ public class SharedModel {
 
     public static String getBookTitle(String bookId) {
         try (Connection connection = MySqlConnection.getConnection()) {
-            String query = "SELECT TieuDeSach FROM library_oop1.thuvienbook WHERE id = ?;";
+            String query = "SELECT TieuDeSach FROM book WHERE BookID = ?;";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
                 preparedStatement.setString(1, bookId);
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -50,95 +86,19 @@ public class SharedModel {
         } catch (SQLException e) {
             System.out.println("Error: " + e.getMessage());
         }
-        return "Unknown Title"; // Return a default value if the book is not found
+        return "Unknown Title";
     }
 
-    public static class BorrowRecord {
-        private int id;
-        private String bookId;
-        private String bookTitle;
-        private String borrowerName;
-        private Date borrowDate;
-        private Date returnDate;
-
-        // Constructor
-        public BorrowRecord(int id, String bookId, String bookTitle, String borrowerName, Date borrowDate, Date returnDate) {
-            this.id = id;
-            this.bookId = bookId;
-            this.bookTitle = bookTitle;
-            this.borrowerName = borrowerName;
-            this.borrowDate = borrowDate;
-            this.returnDate = returnDate;
-        }
-
-        // Getters
-        public int getId() {
-            return id;
-        }
-
-        public String getBookId() {
-            return bookId;
-        }
-
-        public String getBookTitle() {
-            return bookTitle;
-        }
-
-        public String getBorrowerName() {
-            return borrowerName;
-        }
-
-        public Date getBorrowDate() {
-            return borrowDate;
-        }
-
-        public Date getReturnDate() {
-            return returnDate;
-        }
-    }
-
-    public static class Borrower {
-        private int id;
-        private String name;
-        private String email;
-        private String phoneNumber;
-
-        // Constructor
-        public Borrower(int id, String name, String email, String phoneNumber) {
-            this.id = id;
-            this.name = name;
-            this.email = email;
-            this.phoneNumber = phoneNumber;
-        }
-
-        // Getters
-        public int getId() {
-            return id;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getEmail() {
-            return email;
-        }
-
-        public String getPhoneNumber() {
-            return phoneNumber;
-        }
-    }
-
-    private static void saveBorrowRecordToDatabase(BorrowRecord record) {
+    public static void saveBorrowRecordToDatabase(BorrowRecord record) {
         try (Connection connection = MySqlConnection.getConnection()) {
-            String query = "INSERT INTO MuonSachBook (ID, BookId, TenSach, TenNguoiMuon, NgayMuon, NgayHenTra) VALUES (?, ?, ?, ?, ?, ?)";
+            String query = "INSERT INTO MuonSach (BorrowID, TenSach, BookID, IDNguoiMuon, NgayMuon, NgayHenTra) VALUES (?, ?, ?, ?, ?, ?)";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setInt(1, record.getId());
+                preparedStatement.setString(1, record.getBorrowID());
                 preparedStatement.setString(2, record.getBookId());
-                preparedStatement.setString(3, record.getBookTitle());
-                preparedStatement.setString(4, record.getBorrowerName());
-                preparedStatement.setDate(5, new java.sql.Date(record.getBorrowDate().getTime()));
-                preparedStatement.setDate(6, new java.sql.Date(record.getReturnDate().getTime()));
+                preparedStatement.setString(3, record.getBookName());
+                preparedStatement.setString(4, record.getBorrowerID());
+                preparedStatement.setString(5, record.getBorrowDate());
+                preparedStatement.setString(6, record.getReturnDate());
                 preparedStatement.executeUpdate();
             }
         } catch (SQLException e) {
@@ -146,11 +106,11 @@ public class SharedModel {
         }
     }
 
-    private static void saveBorrowerToDatabase(Borrower borrower) {
+    public static void saveBorrowerToDatabase(Borrower borrower) {
         try (Connection connection = MySqlConnection.getConnection()) {
-            String query = "INSERT INTO NguoiMuonBook (ID, HoTen, email, SDT) VALUES (?, ?, ?, ?)";
+            String query = "INSERT INTO NguoiMuon (IDNguoiMuon, TenNguoiMuon, email, SoDienThoai) VALUES (?, ?, ?, ?)";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setInt(1, borrower.getId());
+                preparedStatement.setString(1, borrower.getId());
                 preparedStatement.setString(2, borrower.getName());
                 preparedStatement.setString(3, borrower.getEmail());
                 preparedStatement.setString(4, borrower.getPhoneNumber());
@@ -159,5 +119,112 @@ public class SharedModel {
         } catch (SQLException e) {
             System.out.println("Error: " + e.getMessage());
         }
+    }
+
+    public String generateUniqueBorrowID(){
+        String newID = "";
+        try{
+            Connection connection = MySqlConnection.getConnection();
+            String query = "SELECT MAX(BorrowID) FROM MuonSach";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if(resultSet.next()){
+                String maxID = resultSet.getString(1);
+                if(maxID != null){
+                    int maxIDInt = Integer.parseInt(maxID.split("-")[1]);
+                    newID = String.format("MS-%03d", maxIDInt + 1);
+                }else{
+                    newID = "MS-001";
+                }
+            }else{
+                newID = "MS-001";
+            }
+        }catch(SQLException e){
+            System.out.println("Error: " + e.getMessage());
+        }
+        return newID;
+    }
+    
+    public String generateUniqueBorrowerID(String borrowerName){
+        String newID = "";
+        if(getBorrowedBookCount(borrowerName) > 0){
+            return getIDByBorrowerName(borrowerName);
+        }
+        try{
+            Connection connection = MySqlConnection.getConnection();
+            String query = "SELECT MAX(IDNguoiMuon) FROM NguoiMuon";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if(resultSet.next()){
+                String maxID = resultSet.getString(1);
+                if(maxID != null){
+                    int maxIDInt = Integer.parseInt(maxID.split("-")[1]);
+                    newID = String.format("NM-%03d", maxIDInt + 1);
+                }else{
+                    newID = "NM-001";
+                }
+            }else{
+                newID = "NM-001";
+            }
+        }catch(SQLException e){
+            System.out.println("Error: " + e.getMessage());
+        }
+        return newID;
+    }
+
+    public int getBorrowedBookCount(String BorrowerName){
+        int count = 0;
+        try{
+            Connection connection = MySqlConnection.getConnection();
+            String query = "SELECT COUNT(*) FROM NguoiMuon WHERE TenNguoiMuon = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, BorrowerName);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if(resultSet.next()){
+                count = resultSet.getInt(1);
+            }
+        }catch(SQLException e){
+            System.out.println("Error: " + e.getMessage());
+        }
+        return count;
+    }
+
+    public String getIDByBorrowerName(String BorrowerName){
+        String ID = "";
+        try{
+            Connection connection = MySqlConnection.getConnection();
+            String query = "SELECT IDNguoiMuon FROM NguoiMuon WHERE TenNguoiMuon = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, BorrowerName);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if(resultSet.next()){
+                ID = resultSet.getString(1);
+            }
+        }catch(SQLException e){
+            System.out.println("Error: " + e.getMessage());
+        }
+        return ID;
+    }
+
+    public String getBorrowReturnDate(String BookID){
+        String returnDate = "";
+        try{
+            Connection connection = MySqlConnection.getConnection();
+            String query = "SELECT NgayHenTra FROM MuonSach WHERE BookID = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, BookID);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if(resultSet.next()){
+                returnDate = resultSet.getString(1);
+            }
+        }catch(SQLException e){
+            System.out.println("Error: " + e.getMessage());
+        }
+        return returnDate;
     }
 }

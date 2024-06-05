@@ -94,7 +94,7 @@ public class BorrowBook extends JFrame {
         bookInfoPanel.add(bookIdLabel);
         bookInfoPanel.add(bookIdField);
         bookInfoPanel.add(bookTitleStaticLabel);
-        bookInfoPanel.add(bookTitleLabel); // Add the dynamic label to the panel
+        bookInfoPanel.add(bookTitleLabel);
         bookInfoPanel.add(borrowerNameLabel);
         bookInfoPanel.add(borrowerNameField);
         bookInfoPanel.add(emailLabel);
@@ -139,10 +139,6 @@ public class BorrowBook extends JFrame {
 
             if (!bookId.isEmpty() && !borrowerName.isEmpty() && !email.isEmpty() && !phoneNumber.isEmpty() && !borrowDate.isEmpty()) {
                 // Kiểm tra số lượng sách
-                if(isBorrowUnique(bookId, borrowerName) == false) {
-                    JOptionPane.showMessageDialog(this, "Sách đã được mượn bởi người này", "Thông báo", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
                 int currentQuantity = checkBookQuantity(bookId);
                 if (currentQuantity > 0) {
                     // Tính ngày hẹn trả (15 ngày sau ngày mượn)
@@ -156,14 +152,20 @@ public class BorrowBook extends JFrame {
                     calendar.add(Calendar.DAY_OF_MONTH, 15);
                     String returnDate = dateFormat.format(calendar.getTime());
 
-                    BorrowRecord record = new BorrowRecord(bookId, borrowerName, borrowDate, returnDate, phoneNumber);
-                    Borrower borrower = new Borrower(bookId, borrowerName, email, phoneNumber);
+                    SharedModel sm = new SharedModel();
+                    String borrowID = sm.generateUniqueBorrowID();
+                    String borrowerID = sm.generateUniqueBorrowerID(borrowerName);
 
-                    addBorrowRecordToDatabase(record);
+                    if(!isBorrowUnique(bookId, borrowerID)) {
+                        JOptionPane.showMessageDialog(this, "Sách đã được mượn bởi người này", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+
+                    BorrowRecord record = new BorrowRecord(borrowID, fetchBookTitle(bookId), bookId, borrowerID, borrowDate, returnDate);
+                    Borrower borrower = new Borrower(borrowerID, borrowerName, email, phoneNumber);
+
                     addBorrowerToDatabase(borrower);
-
-                    SharedModel.addBorrowRecord(null);
-                    SharedModel.addBorrower(null);
+                    addBorrowRecordToDatabase(record);
 
                     // Cập nhật số lượng sách
                     updateBookQuantity(bookId, currentQuantity - 1);
@@ -192,7 +194,6 @@ public class BorrowBook extends JFrame {
 
         rightPanel.add(borrowInfoPanel, BorderLayout.CENTER);
 
-        // Add left and right panels to the content pane
         contentPane.add(leftPanel, BorderLayout.WEST);
         contentPane.add(rightPanel, BorderLayout.CENTER);
 
@@ -266,7 +267,7 @@ public class BorrowBook extends JFrame {
             connection = MySqlConnection.getConnection();
 
             // Truy vấn để lấy tên sách dựa trên ID sách
-            String sql = "SELECT TieuDeSach FROM ThuVienBook WHERE ID = ?";
+            String sql = "SELECT TieuDeSach FROM Book WHERE BookID = ?";
             statement = connection.prepareStatement(sql);
             statement.setString(1, bookId);
             resultSet = statement.executeQuery();
@@ -301,7 +302,7 @@ public class BorrowBook extends JFrame {
             connection = MySqlConnection.getConnection();
 
             // Truy vấn để lấy số lượng sách hiện tại dựa trên ID sách
-            String sql = "SELECT SoLuong FROM ThuVienBook WHERE ID = ?";
+            String sql = "SELECT SoLuong FROM Book WHERE BookID = ?;";
             statement = connection.prepareStatement(sql);
             statement.setString(1, bookId);
             resultSet = statement.executeQuery();
@@ -334,7 +335,7 @@ public class BorrowBook extends JFrame {
             connection = MySqlConnection.getConnection();
 
             // Cập nhật số lượng sách mới dựa trên ID sách
-            String sql = "UPDATE ThuVienBook SET SoLuong = ? WHERE ID = ?";
+            String sql = "UPDATE Book SET SoLuong = ? WHERE BookID = ?;";
             statement = connection.prepareStatement(sql);
             statement.setInt(5, newQuantity);
             statement.setString(1, bookId);
@@ -352,61 +353,41 @@ public class BorrowBook extends JFrame {
     }
 
     // Thêm thông tin mượn sách vào cơ sở dữ liệu
-    private void addBorrowRecordToDatabase(BorrowRecord record) {
-        Connection connection = null;
-        PreparedStatement statement = null;
-
-        try {
-            // Kết nối đến cơ sở dữ liệu
-            connection = MySqlConnection.getConnection();
-
-            // Thêm thông tin mượn sách vào cơ sở dữ liệu
-            String sql = "INSERT INTO muonsachbook (ID, TenSach, TenNguoiMuon, NgayMuon) VALUES (?, ?, ?, ?)";
-            statement = connection.prepareStatement(sql);
-            statement.setString(1, record.getBookId());
-            statement.setString(2, fetchBookTitle(record.getBookId()));
-            statement.setString(3, record.getBorrowerName());
-            statement.setString(5, record.getBorrowDate());
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (statement != null) statement.close();
-                if (connection != null) connection.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
+    private boolean addBorrowRecordToDatabase(BorrowRecord record) {
+        try (Connection connection = MySqlConnection.getConnection()) {
+            String query = "INSERT INTO muonsach (borrowID, TenSach, BookID, IDNguoiMuon, NgayMuon, NgayHenTra) VALUES (?, ?, ?, ?, ?, ?);";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                preparedStatement.setString(1, record.getBorrowID());
+                preparedStatement.setString(2, record.getBookName());
+                preparedStatement.setString(3, record.getBookId());
+                preparedStatement.setString(4, record.getBorrowerID());
+                preparedStatement.setString(5, record.getBorrowDate());
+                preparedStatement.setString(6, record.getReturnDate());
+                preparedStatement.executeUpdate();
             }
+            return true;
+        } catch (SQLException e) {
+            System.out.println("Error: " + e.getMessage());
         }
+        return false;
     }
 
     // Thêm thông tin người mượn vào cơ sở dữ liệu
-    private void addBorrowerToDatabase(Borrower borrower) {
-        Connection connection = null;
-        PreparedStatement statement = null;
-
-        try {
-            // Kết nối đến cơ sở dữ liệu
-            connection = MySqlConnection.getConnection();
-
-            // Thêm thông tin người mượn vào cơ sở dữ liệu
-            String sql = "INSERT INTO nguoimuonbook (ID, TenNguoiMuon, Email, SoDienThoai) VALUES (?, ?, ?, ?)";
-            statement = connection.prepareStatement(sql);
-            statement.setString(1, borrower.getId());
-            statement.setString(2, borrower.getName());
-            statement.setString(3, borrower.getEmail());
-            statement.setString(4, borrower.getPhoneNumber());
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (statement != null) statement.close();
-                if (connection != null) connection.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
+    private boolean addBorrowerToDatabase(Borrower borrower) {
+        try (Connection connection = MySqlConnection.getConnection()) {
+            String query = "INSERT INTO NguoiMuon (IDNguoiMuon, TenNguoiMuon, email, SoDienThoai) VALUES (?, ?, ?, ?);";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                preparedStatement.setString(1, borrower.getId());
+                preparedStatement.setString(2, borrower.getName());
+                preparedStatement.setString(3, borrower.getEmail());
+                preparedStatement.setString(4, borrower.getPhoneNumber());
+                preparedStatement.executeUpdate();
             }
+            return true;
+        } catch (SQLException e) {
+            System.out.println("Error: " + e.getMessage());
         }
+        return false;
     }
 
     private boolean isBorrowUnique(String bookId, String borrowerName) {
@@ -416,7 +397,10 @@ public class BorrowBook extends JFrame {
         try {
             // Kết nối đến cơ sở dữ liệu
             connection = MySqlConnection.getConnection();
-            String sql = "SELECT ID, TenNguoiMuon, Count(*) as Total FROM muonsachbook WHERE ID = ? AND TenNguoiMuon = ? GROUP BY ID, TenNguoiMuon";
+            String sql = "SELECT IDNguoiMuon, BookID, COUNT(*) AS Total" +
+                        " FROM MuonSach" +
+                        " WHERE BookID = ? AND IDNguoiMuon = ? " +
+                        "GROUP BY IDNguoiMuon, BookID;";
             statement = connection.prepareStatement(sql);
             statement.setString(1, bookId);
             statement.setString(2, borrowerName);
@@ -427,7 +411,7 @@ public class BorrowBook extends JFrame {
             }
             if (total > 0) {
                 return false;
-            }       
+            }     
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
@@ -439,6 +423,18 @@ public class BorrowBook extends JFrame {
             }
         }
         return true;
+    }
+
+    public int getRows() throws SQLException{
+        int rows = 0;
+        Connection connection = MySqlConnection.getConnection();
+        String query = "select Count(*) AS Total From muonsach;";
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        ResultSet resultSet = preparedStatement.executeQuery();
+        if(resultSet.next()){
+            rows = resultSet.getInt("Total");
+        }
+        return rows;
     }
 
     public static void main(String[] args) {
